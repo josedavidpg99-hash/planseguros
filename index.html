@@ -49,6 +49,7 @@ th{color:var(--muted);font-size:11px;text-transform:uppercase}
     <button class="tab active" data-tab="dashboard">Dashboard</button>
     <button class="tab" data-tab="daily">Día</button>
     <button class="tab" data-tab="pipeline">Citas & Standby</button>
+    <button class="tab" data-tab="agenda">Agenda</button>
     <button class="tab" data-tab="weekly">Semana</button>
     <button class="tab" data-tab="content">Redes</button>
     <button class="tab" data-tab="image">Imagen</button>
@@ -140,6 +141,107 @@ th{color:var(--muted);font-size:11px;text-transform:uppercase}
       <div style="overflow:auto"><table id="prospectTable"></table></div>
     </div>
   </section>
+
+  
+  <section id="agenda" class="panel">
+    <div class="card">
+      <h2>Agenda del Plan $10K</h2>
+      <p class="small">Organiza tus citas, llamadas, seguimientos, bloques de contenido y actividades de agencia. Todo queda guardado junto con el resto de tu Plan $10K.</p>
+
+      <div class="row">
+        <div>
+          <label>Fecha</label>
+          <input type="date" id="aDate">
+        </div>
+        <div>
+          <label>Hora</label>
+          <input type="time" id="aTime">
+        </div>
+        <div>
+          <label>Tipo</label>
+          <select id="aType">
+            <option>Cita</option>
+            <option>Llamadas</option>
+            <option>Seguimiento</option>
+            <option>Contenido</option>
+            <option>Administración</option>
+            <option>Reunión</option>
+            <option>Actividad de agencia</option>
+          </select>
+        </div>
+        <div>
+          <label>Estado</label>
+          <select id="aStatus">
+            <option>Pendiente</option>
+            <option>Confirmada</option>
+            <option>Standby</option>
+            <option>Completada</option>
+            <option>Reagendada</option>
+            <option>Cancelada</option>
+            <option>No show</option>
+          </select>
+        </div>
+      </div>
+
+      <br>
+
+      <div class="row">
+        <div>
+          <label>Persona / actividad</label>
+          <input id="aName" placeholder="Ej.: María Pérez o bloque de llamadas">
+        </div>
+        <div>
+          <label>Teléfono</label>
+          <input id="aPhone" placeholder="Opcional">
+        </div>
+        <div>
+          <label>Ciudad / lugar</label>
+          <input id="aPlace" placeholder="Ej.: Orem, Provo, Zoom...">
+        </div>
+        <div>
+          <label>Fuente</label>
+          <select id="aSource">
+            <option>AIL</option>
+            <option>Referido</option>
+            <option>Instagram</option>
+            <option>Facebook</option>
+            <option>Comunidad</option>
+            <option>Amigo/familiar</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <br>
+
+      <label>Notas</label>
+      <textarea id="aNotes" placeholder="Ej.: confirmar 2 horas antes, tiene esposo disponible, llevar tarjeta médica..."></textarea>
+
+      <br>
+
+      <button class="primary" onclick="saveAgenda()">Guardar en agenda</button>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h3>Hoy</h3>
+        <div id="agendaToday"></div>
+      </div>
+
+      <div class="card">
+        <h3>Próximos 7 días</h3>
+        <div id="agendaWeek"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Toda la agenda</h3>
+      <div style="overflow:auto">
+        <table id="agendaTable"></table>
+      </div>
+    </div>
+  </section>
+
 
   <section id="weekly" class="panel">
     <div class="card">
@@ -233,7 +335,9 @@ th{color:var(--muted);font-size:11px;text-transform:uppercase}
 
 <script>
 const KEY='plan10k_insurance_v1';
-let db=JSON.parse(localStorage.getItem(KEY)||'{"daily":[],"prospects":[],"texts":{},"budget":{}}');
+let db=JSON.parse(localStorage.getItem(KEY)||'{"daily":[],"prospects":[],"agenda":[],"texts":{},"budget":{}}');
+if(!db.agenda) db.agenda = [];
+
 function persist(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')})
 function n(v){return Number(v)||0}
@@ -247,6 +351,99 @@ function saveDaily(){
   let r={date:dDate.value||new Date().toISOString().slice(0,10),attempts:n(dAttempts.value),contacts:n(dContacts.value),appts:n(dAppts.value),shows:n(dShows.value),sales:n(dSales.value),refs:n(dRefs.value),comm:n(dComm.value),notes:dNotes.value};
   db.daily.push(r); persist(); ['dAttempts','dContacts','dAppts','dShows','dSales','dRefs','dComm','dNotes'].forEach(id=>document.getElementById(id).value='')
 }
+
+function saveAgenda(){
+  if(!db.agenda) db.agenda = [];
+
+  const date = document.getElementById('aDate').value;
+  const time = document.getElementById('aTime').value;
+  const name = document.getElementById('aName').value.trim();
+
+  if(!date || !time || !name){
+    alert('Completa fecha, hora y persona/actividad.');
+    return;
+  }
+
+  db.agenda.push({
+    date,
+    time,
+    type: document.getElementById('aType').value,
+    status: document.getElementById('aStatus').value,
+    name,
+    phone: document.getElementById('aPhone').value.trim(),
+    place: document.getElementById('aPlace').value.trim(),
+    source: document.getElementById('aSource').value,
+    notes: document.getElementById('aNotes').value.trim()
+  });
+
+  db.agenda.sort((a,b) => (a.date + ' ' + a.time).localeCompare(b.date + ' ' + b.time));
+  persist();
+
+  ['aName','aPhone','aPlace','aNotes'].forEach(id => document.getElementById(id).value = '');
+}
+
+function delAgenda(index){
+  db.agenda.splice(index,1);
+  persist();
+}
+
+function setAgendaStatus(index, status){
+  db.agenda[index].status = status;
+  persist();
+}
+
+function agendaCard(item){
+  const tel = item.phone ? `<div class="small">${item.phone}</div>` : '';
+  const place = item.place ? `<div class="small">${item.place}</div>` : '';
+  return `
+    <div style="padding:10px 0;border-bottom:1px solid var(--line)">
+      <b>${item.time} · ${item.name}</b>
+      <div class="small">${item.type} · ${item.status}</div>
+      ${tel}${place}
+    </div>
+  `;
+}
+
+function renderAgenda(){
+  if(!db.agenda) db.agenda = [];
+
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0,10);
+
+  const end = new Date(today);
+  end.setDate(end.getDate()+7);
+  const endStr = end.toISOString().slice(0,10);
+
+  const todayItems = db.agenda.filter(x => x.date === todayStr);
+  document.getElementById('agendaToday').innerHTML =
+    todayItems.length ? todayItems.map(agendaCard).join('') : '<p class="small">No tienes bloques registrados para hoy.</p>';
+
+  const weekItems = db.agenda.filter(x => x.date >= todayStr && x.date <= endStr);
+  document.getElementById('agendaWeek').innerHTML =
+    weekItems.length ? weekItems.map(x => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>${x.date} · ${x.time}</b><div>${x.name}</div><div class="small">${x.type} · ${x.status}</div></div>`).join('')
+    : '<p class="small">No hay actividades registradas para los próximos 7 días.</p>';
+
+  document.getElementById('agendaTable').innerHTML =
+    '<tr><th>Fecha</th><th>Hora</th><th>Persona/Actividad</th><th>Tipo</th><th>Estado</th><th>Lugar</th><th>Fuente</th><th>Notas</th><th></th></tr>' +
+    db.agenda.map((x,i) => `
+      <tr>
+        <td>${x.date}</td>
+        <td>${x.time}</td>
+        <td><b>${x.name}</b>${x.phone ? '<br><span class="small">'+x.phone+'</span>' : ''}</td>
+        <td>${x.type}</td>
+        <td>
+          <select onchange="setAgendaStatus(${i}, this.value)">
+            ${['Pendiente','Confirmada','Standby','Completada','Reagendada','Cancelada','No show'].map(s => `<option ${x.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td>${x.place || ''}</td>
+        <td>${x.source || ''}</td>
+        <td>${x.notes || ''}</td>
+        <td><button class="secondary" onclick="delAgenda(${i})">×</button></td>
+      </tr>
+    `).join('');
+}
+
 function saveProspect(){db.prospects.push({name:pName.value,phone:pPhone.value,status:pStatus.value,next:pNext.value,note:pNote.value});persist();['pName','pPhone','pNext','pNote'].forEach(id=>document.getElementById(id).value='')}
 function delProspect(i){db.prospects.splice(i,1);persist()}
 function delDaily(i){db.daily.splice(i,1);persist()}
