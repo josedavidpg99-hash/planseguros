@@ -352,6 +352,13 @@ function saveDaily(){
   db.daily.push(r); persist(); ['dAttempts','dContacts','dAppts','dShows','dSales','dRefs','dComm','dNotes'].forEach(id=>document.getElementById(id).value='')
 }
 
+function localDateStr(dateObj=new Date()){
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth()+1).padStart(2,'0');
+  const d = String(dateObj.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
 function saveAgenda(){
   if(!db.agenda) db.agenda = [];
 
@@ -378,6 +385,7 @@ function saveAgenda(){
 
   db.agenda.sort((a,b) => (a.date + ' ' + a.time).localeCompare(b.date + ' ' + b.time));
   persist();
+  alert('Cita/actividad guardada en tu agenda.');
 
   ['aName','aPhone','aPlace','aNotes'].forEach(id => document.getElementById(id).value = '');
 }
@@ -408,11 +416,11 @@ function renderAgenda(){
   if(!db.agenda) db.agenda = [];
 
   const today = new Date();
-  const todayStr = today.toISOString().slice(0,10);
+  const todayStr = localDateStr(today);
 
   const end = new Date(today);
   end.setDate(end.getDate()+7);
-  const endStr = end.toISOString().slice(0,10);
+  const endStr = localDateStr(end);
 
   const todayItems = db.agenda.filter(x => x.date === todayStr);
   document.getElementById('agendaToday').innerHTML =
@@ -467,10 +475,12 @@ function renderAll(){
   }
   diagnosis.textContent=msg;
   contentIdeas.value=db.texts.contentIdeas||'';
+  renderAgenda();
   let b=db.budget||{};bMarketing.value=b.marketing||'';bGas.value=b.gas||'';bTools.value=b.tools||'';bClothes.value=b.clothes||'';bTotal.textContent=money(n(b.marketing)+n(b.gas)+n(b.tools)+n(b.clothes));
 }
 monthSelect.onchange=renderAll;
-dDate.value=new Date().toISOString().slice(0,10);
+dDate.value=localDateStr();
+aDate.value=localDateStr();
 renderAll();
 </script>
 </body>
